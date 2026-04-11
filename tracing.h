@@ -1,6 +1,8 @@
 #ifndef __INCLUDE_TRACING_H_
 #define __INCLUDE_TRACING_H_
 
+#include "ble.h"
+
 //define IR Pin
 #define analogPinIR0 A3
 #define analogPinIR1 A4
@@ -23,46 +25,80 @@ float IRstarts[5];
 #define IRDigital4 (analogRead(analogPinIR4) >= IRthreshold4 ? HIGH : LOW)
 
 
+
 // --- 循跡參數調整 ---
 int Tp = 120;           // 基礎速度 (建議不要太快，比較好校正)
 float Kp = 120.0;       // 校正強度 (若擺動太劇烈就調小)
 
-// --- Linked List 結構 ---
-struct turn {
-  int way; // 0:直行, 1:左轉, 2:右轉, 3:迴轉
-  turn *next;
-};
-turn *head = NULL;
-turn *currentCmd = NULL;
 
-void addTurn(int way) {
-  turn *newNode = new turn{way, NULL};
-  if (head == NULL) { head = newNode; currentCmd = head; }
-  else {
-    turn *temp = head;
-    while (temp->next) temp = temp->next;
-    temp->next = newNode;
+enum Turn {
+  FORWARD,
+  LEFT,
+  RIGHT,
+  BACKWARD
+};
+
+struct Command {
+  bool valid;
+  bool end;
+  Turn turn;
+};
+
+Command queryTurn() {
+  hm10.clearInput();
+  // construct query
+  hm10.input_msg += 'q';
+  hm10.input_msg += Communicator::cmdEnd;
+  hm10.sendMsg();
+  // prepare for loading response
+  hm10.clearResponse();
+  while(!hm10.loadResponse());
+
+  // parse command
+  Command result{true};
+  char c = hm10.response_msg[0];
+  switch(c) {
+  case 'F':
+    result.turn = FORWARD;
+    break;
+  case 'L':
+    result.turn = LEFT;
+    break;
+  case 'R':
+    result.turn = RIGHT;
+    break;
+  case 'B':
+    result.turn = BACKWARD;
+    break;
+  case 'E':
+    result.end = true;
+    break;
+  default:
+    result.valid = false;
+    break;
   }
+
+  return result;
 }
 
 // --- 強力原地轉向函式 ---
-void executeHardTurn(int way) {
-  if (way == 0) { // 直行：直接衝過黑區
+void executeHardTurn(Turn turn) {
+  if (turn == FORWARD) { // 直行：直接衝過黑區
     motorWriting(Tp, Tp);
     delay(500); 
     return;
   }
 
   // 1. 執行轉向 (原地旋轉)
-  if (way == 1) { // 左轉
+  if (turn == LEFT) { // 左轉
     motorWriting(-160, 160); // 提高電壓確保轉得動
     delay(350);              // 轉向時間，需實測微調
   } 
-  else if (way == 2) { // 右轉
+  else if (turn == RIGHT) { // 右轉
     motorWriting(160, -160);
     delay(350); 
   } 
-  else if (way == 3) { // 迴轉
+  else if (turn == BACKWARD) { // 迴轉
     motorWriting(160, -160);
     delay(700); 
   }
@@ -84,7 +120,7 @@ void tracingSetup() {
   pinMode(analogPinIR3,INPUT);
   pinMode(analogPinIR4,INPUT);
 
-  delay (3000);
+  delay (2000);
   IRstarts[0] = analogRead(analogPinIR0);
   IRstarts[1] = analogRead(analogPinIR1);
   IRstarts[2] = analogRead(analogPinIR2);
@@ -114,9 +150,12 @@ void tracingLoop() {
     Serial.println("NODE DETECTED! Waiting 10s...");
     delay(2000); // 暫時延遲 2 秒
 
-    if (currentCmd != NULL) {
-      executeHardTurn(currentCmd->way); // 執行 Linked List 指定的方向
-      currentCmd = currentCmd->next;    // 指向下一筆路徑
+    Command currentCmd{false};
+    while(!currentCmd.valid)
+      currentCmd = queryTurn();
+
+    if (!currentCmd.end) {
+      executeHardTurn(currentCmd.turn);
     } else {
       Serial.println("No more commands. Stopping.");
       while(1); 

@@ -3,7 +3,9 @@
 
 #define __RFID_SERIAL_DEBUG__
 
-//include RFID Lab
+#include "ble.h"
+
+// include RFID Lab
 #include <SPI.h>
 #include <MFRC522.h>
 
@@ -47,6 +49,15 @@ byte* rfidRead() {
     return id;
   }
   return nullptr;
+}
+
+void sendRFID(byte* id) {
+  hm10.clearInput();
+  hm10.input_msg += 'r';
+  hm10.input_msg += static_cast<char>(id[0]);
+  hm10.input_msg += static_cast<char>(id[1]);
+  hm10.input_msg += Communicator::cmdEnd;
+  hm10.sendMsg();
 }
 
 #endif // __INCLUDE_RFID_H_

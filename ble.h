@@ -9,9 +9,9 @@ class Communicator {
 private:
   static constexpr long baudRates[9] = {9600, 19200, 38400, 57600, 115200, 4800, 2400, 1200, 230400};
   static bool moduleReady;
-  static constexpr char responseEnd[] = "ED";
 
 public:
+  static constexpr char cmdEnd[] = "ED";
   static String input_msg;
   static String response_msg;
 
@@ -19,8 +19,10 @@ private:
   void sendATCommand(const char* command);
   bool waitForResponse(const char* expected, unsigned long timeout);
 
-public:
   Communicator();
+
+public:
+  static Communicator& getObj();
   void bleSetup();
   void sendMsg();
   bool loadResponse();
@@ -32,10 +34,16 @@ bool Communicator::moduleReady = false;
 String Communicator::input_msg;
 String Communicator::response_msg;
 constexpr long Communicator::baudRates[9];
+constexpr char Communicator::cmdEnd[];
 
 Communicator::Communicator() {
   input_msg.reserve(20);
   response_msg.reserve(20);
+}
+
+Communicator& Communicator::getObj() {
+  static Communicator obj;
+  return obj;
 }
 
 
@@ -166,7 +174,7 @@ bool Communicator::loadResponse() {
     while(Serial3.available()) {
       char c = Serial3.read();
       response_msg += c;
-      if(response_msg.endsWith(responseEnd)) {
+      if(response_msg.endsWith(cmdEnd)) {
         return true;
       }
     }
@@ -175,5 +183,7 @@ bool Communicator::loadResponse() {
     return false;
   }
 }
+
+Communicator& hm10 = Communicator::getObj();
 
 #endif // __INCLUDE_BLE_H_
