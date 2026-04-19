@@ -1,9 +1,9 @@
 #ifndef __INCLUDE_BLE_H_
 #define __INCLUDE_BLE_H_
 
-#define CUSTOM_NAME "HM10_8team" // Max length is 12 characters [1]
+#define CUSTOM_NAME "HM10_TEAM8" // Max length is 12 characters [1]
 
-#define __BLE_SERIAL_DEBUG__
+// #define __BLE_SERIAL_DEBUG__
 
 class Communicator {
 private:
@@ -12,6 +12,7 @@ private:
 
 public:
   static constexpr char cmdEnd[] = "ED";
+  static constexpr char cmdFailStart = 'x';
   static String input_msg;
   static String response_msg;
 
@@ -26,8 +27,11 @@ public:
   void bleSetup();
   void sendMsg();
   bool loadResponse();
+  void flushResponse();
+  void sendMsgUntilSuccess();
   void clearInput();
   void clearResponse();
+  void sendSuccessMsg();
 };
 
 bool Communicator::moduleReady = false;
@@ -35,6 +39,7 @@ String Communicator::input_msg;
 String Communicator::response_msg;
 constexpr long Communicator::baudRates[9];
 constexpr char Communicator::cmdEnd[];
+constexpr char Communicator::cmdFailStart;
 
 Communicator::Communicator() {
   input_msg.reserve(20);
@@ -74,8 +79,8 @@ bool Communicator::waitForResponse(const char* expected, unsigned long timeout) 
 }
 
 void Communicator::bleSetup() {
-#ifdef __BLE_SERIAL_DEBUG__
   Serial.begin(115200); // Debug Monitor (USB)
+#ifdef __BLE_SERIAL_DEBUG__
   while (!Serial);
   Serial.println("Initializing HM-10...");
 #endif // __BLE_SERIAL_DEBUG__
@@ -122,7 +127,7 @@ void Communicator::bleSetup() {
   Serial.println("Restoring factory defaults...");
 #endif // __BLE_SERIAL_DEBUG__
   sendATCommand("AT+RENEW"); // Restores all setup values
-  delay(500);
+  delay(1000);
 
   // 4. Set Custom Name via Macro
 #ifdef __BLE_SERIAL_DEBUG__
@@ -131,6 +136,8 @@ void Communicator::bleSetup() {
 #endif // __BLE_SERIAL_DEBUG__
   String nameCmd = "AT+NAME" + String(CUSTOM_NAME);
   sendATCommand(nameCmd.c_str()); // Max length is 12
+  delay(500);
+  sendATCommand("AT+RESET"); // Restart the module
   
   // 5. Enable Connection Notifications
 #ifdef __BLE_SERIAL_DEBUG__
@@ -149,8 +156,11 @@ void Communicator::bleSetup() {
   Serial.println("Restarting module...");
 #endif // __BLE_SERIAL_DEBUG__
   sendATCommand("AT+RESET"); // Restart the module
-  delay(1000);
+  Serial.println("AT RESET");
+  delay(2000);
   Serial3.begin(9600); // Now the module would use baudrate 9600
+
+  flushResponse();
 
 #ifdef __BLE_SERIAL_DEBUG__
   Serial.println("Initialization Complete.");
@@ -175,13 +185,42 @@ bool Communicator::loadResponse() {
       char c = Serial3.read();
       response_msg += c;
       if(response_msg.endsWith(cmdEnd)) {
+        Serial.print("recieved: ");
+        Serial.println(response_msg);
         return true;
       }
     }
   }
-  else {
-    return false;
+  return false;
+}
+
+void Communicator::flushResponse() {
+  while(Serial3.available()) {
+    char c = Serial3.read();
   }
+  Serial.println("Flush Responses");
+}
+
+void Communicator::sendMsgUntilSuccess() {
+  clearResponse();
+  sendMsg();
+  // test if response is ok
+  while(true) {
+    // loading response
+    while(!loadResponse());
+    // response is fine
+    if(response_msg[0] != cmdFailStart)
+      break;
+    // abnormal response -> re-send msg
+    sendMsg();
+  }
+}
+
+void Communicator::sendSuccessMsg() {
+  clearInput();
+  input_msg += 'v';
+  input_msg += cmdEnd;
+  sendMsg();
 }
 
 Communicator& hm10 = Communicator::getObj();

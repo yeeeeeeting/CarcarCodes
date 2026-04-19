@@ -13,7 +13,7 @@
 float IRstarts[5];
 
 #define IRthreshold0 180
-#define IRthreshold1 360
+#define IRthreshold1 320
 #define IRthreshold2 180
 #define IRthreshold3 180
 #define IRthreshold4 180
@@ -25,10 +25,29 @@ float IRstarts[5];
 #define IRDigital4 (analogRead(analogPinIR4) >= IRthreshold4 ? HIGH : LOW)
 
 
-
 // --- 循跡參數調整 ---
-int Tp = 120;           // 基礎速度 (建議不要太快，比較好校正)
+int Tp = 220;           // 基礎速度 (建議不要太快，比較好校正)
 float Kp = 120.0;       // 校正強度 (若擺動太劇烈就調小)
+
+
+
+bool activated = false;
+
+void deactivate() {
+  activated = false;
+  motorWriting(0, 0);
+}
+
+void checkActivated() {
+  if( !hm10.loadResponse() )
+    return;
+  if(hm10.response_msg[0] == 'a') {
+    activated = true;
+  }
+  else {
+    hm10.clearResponse();
+  }
+}
 
 
 enum Turn {
@@ -49,13 +68,10 @@ Command queryTurn() {
   // construct query
   hm10.input_msg += 'q';
   hm10.input_msg += Communicator::cmdEnd;
-  hm10.sendMsg();
-  // prepare for loading response
-  hm10.clearResponse();
-  while(!hm10.loadResponse());
+  hm10.sendMsgUntilSuccess();
 
   // parse command
-  Command result{true};
+  Command result{true, false, FORWARD};
   char c = hm10.response_msg[0];
   switch(c) {
   case 'F':
@@ -91,16 +107,20 @@ void executeHardTurn(Turn turn) {
 
   // 1. 執行轉向 (原地旋轉)
   if (turn == LEFT) { // 左轉
-    motorWriting(-160, 160); // 提高電壓確保轉得動
-    delay(350);              // 轉向時間，需實測微調
+    motorWriting(Tp, Tp);
+    delay(300);
+    motorWriting(-220, 220); // 提高電壓確保轉得動
+    delay(300);              // 轉向時間，需實測微調
   } 
   else if (turn == RIGHT) { // 右轉
-    motorWriting(160, -160);
-    delay(350); 
+    motorWriting(Tp, Tp);
+    delay(300);
+    motorWriting(220, -220);
+    delay(300); 
   } 
   else if (turn == BACKWARD) { // 迴轉
     motorWriting(160, -160);
-    delay(700); 
+    delay(500); 
   }
 
   // 2. 轉完後尋找黑線，直到中央感測器碰到線才停止
@@ -126,6 +146,8 @@ void tracingSetup() {
   IRstarts[2] = analogRead(analogPinIR2);
   IRstarts[3] = analogRead(analogPinIR3);
   IRstarts[4] = analogRead(analogPinIR4);
+
+  activated = false;
 }
 
 void tracingLoop() {
@@ -148,9 +170,9 @@ void tracingLoop() {
   if (d1 && d2 && d3) {
     motorWriting(0, 0); // 立即停車
     Serial.println("NODE DETECTED! Waiting 10s...");
-    delay(2000); // 暫時延遲 2 秒
+    // delay(1000); // 暫時延遲 1 秒
 
-    Command currentCmd{false};
+    Command currentCmd{false, false, FORWARD};
     while(!currentCmd.valid)
       currentCmd = queryTurn();
 
@@ -158,12 +180,15 @@ void tracingLoop() {
       executeHardTurn(currentCmd.turn);
     } else {
       Serial.println("No more commands. Stopping.");
-      while(1); 
+      deactivate();
     }
+
+    delay(3000);
   }
 
   // B. 正常循跡模式 (P 控制)
   else {
+    Serial.println("normal tracing");
     // 計算誤差 error
     // 權重：左邊為負，右邊為正
     float error = (d0 * -2.0 + d1 * -1.0 + d3 * 1.0 + d4 * 2.0);

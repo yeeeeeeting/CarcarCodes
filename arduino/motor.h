@@ -24,7 +24,7 @@ void motorSetup() {
 void motorLeftWrite(int value) {
   const double rate = 1.0;
   if(value >= 0) {
-    value = max(value, 255);
+    value = min(value, 255);
     value = value * rate;
     digitalWrite(AIN1, HIGH);
     digitalWrite(AIN2, LOW);
@@ -45,7 +45,7 @@ void motorLeftWrite(int value) {
 void motorRightWrite(int value) {
   const double rate = 0.91;
   if(value >= 0) {
-    value = max(value, 255);
+    value = min(value, 255);
     value = value * rate;
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, HIGH);

@@ -1,7 +1,7 @@
 #ifndef __INCLUDE_RFID_H_
 #define __INCLUDE_RFID_H_
 
-#define __RFID_SERIAL_DEBUG__
+// #define __RFID_SERIAL_DEBUG__
 
 #include "ble.h"
 
