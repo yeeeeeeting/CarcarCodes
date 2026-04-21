@@ -15,7 +15,7 @@ class HM10ESP32Bridge:
         """Reads and cleans all 'bt_com' tagged logs currently in buffer."""
         if self.ser.in_waiting == 0:
             return []
-        raw_data = self.ser.read_all().decode('utf-8', errors='ignore')
+        raw_data = self.ser.read_all().decode('latin-1', errors='ignore')
         lines = raw_data.splitlines()
         payloads = []
         for line in lines:
