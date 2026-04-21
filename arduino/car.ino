@@ -1,21 +1,20 @@
-#include "ble.h"
+#define __RFID_SERIAL_DEBUG__
+
 #include "motor.h"
-#include "tracing.h"
+#include "ble.h"
 #include "rfid.h"
-// #include "ir_test.h"
+#include "tracing.h"
+#include "ir_test.h"
 
 //A:left B:right
 // ---------------------------
 
-Communicator hm10;
-
 void setup() {
+  // Serial.begin(115200);
   hm10.bleSetup();
   rfidSetup();
   motorSetup();
   tracingSetup();
-
-  addTurn(1); addTurn(2); addTurn(0); addTurn(3);
 
   Serial.println("System Ready. Waiting 0.5s...");
   delay(500);
@@ -23,11 +22,15 @@ void setup() {
 }
 
 void loop() {
-  // tracingLoop();
+
+  if(!activated) {
+    checkActivated();
+    return;
+  }
+
   // irTestLoop();
+  tracingLoop();
 
-  byte* id = rfidRead();
-
-  delay(100);
+  delay(50);
 }
 

@@ -1,7 +1,7 @@
 #ifndef __INCLUDE_RFID_H_
 #define __INCLUDE_RFID_H_
 
-#define __RFID_SERIAL_DEBUG__
+// #define __RFID_SERIAL_DEBUG__
 
 #include "ble.h"
 
@@ -14,6 +14,30 @@ MFRC522 *mfrc522;
 #define RST_PIN 3
 #define SS_PIN  2
 
+byte lastRFID[4]{};
+
+bool RFIDEqual(byte* lhs, byte* rhs) {
+  for(int i = 0; i < 4; ++i) {
+    if(lhs[i] != rhs[i])
+      return false;
+  }
+  return true;
+}
+
+void cpyRFID(byte* mem, byte* target) {
+  for(int i = 0; i < 4; ++i) {
+    mem[i] = target[i];
+  }
+}
+
+void printRFID(const byte* rfid) {
+  for(int i = 0; i < 4; ++i) {
+    Serial.print((int)rfid[i]);
+  }
+  Serial.println("");
+}
+
+
 void rfidSetup() {
   //RFID input
   SPI.begin();
@@ -22,9 +46,10 @@ void rfidSetup() {
 #ifdef __RFID_SERIAL_DEBUG__
   Serial.println(F("Read UID on a MIFARE PICC:"));
 #endif // __RFID_SERIAL_DEBUG__
+  lastRFID[0] = lastRFID[1] = lastRFID[2] = lastRFID[3] = 0;
 }
 
-byte* rfidRead() {
+byte* RFIDRead() {
   //RFID mode
   if(mfrc522->PICC_IsNewCardPresent() && mfrc522->PICC_ReadCardSerial()) {
 #ifdef __RFID_SERIAL_DEBUG__
@@ -54,10 +79,23 @@ byte* rfidRead() {
 void sendRFID(byte* id) {
   hm10.clearInput();
   hm10.input_msg += 'r';
+  hm10.input_msg += static_cast<uint8_t>(id[0]);
+  hm10.input_msg += static_cast<uint8_t>(id[1]);
+  hm10.input_msg += static_cast<uint8_t>(id[2]);
+  hm10.input_msg += static_cast<uint8_t>(id[3]);
+  hm10.input_msg += Communicator::cmdSuffix;
+  hm10.sendMsg();
+}
+
+void sendRFIDUntilSuccess(byte* id) {
+  hm10.clearInput();
+  hm10.input_msg += 'r';
   hm10.input_msg += static_cast<char>(id[0]);
   hm10.input_msg += static_cast<char>(id[1]);
-  hm10.input_msg += Communicator::cmdEnd;
-  hm10.sendMsg();
+  hm10.input_msg += static_cast<char>(id[2]);
+  hm10.input_msg += static_cast<char>(id[3]);
+  hm10.input_msg += Communicator::cmdSuffix;
+  hm10.sendMsgUntilSuccess();
 }
 
 #endif // __INCLUDE_RFID_H_
