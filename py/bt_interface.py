@@ -3,20 +3,21 @@ import time
 import sys
 import threading
 import queue
-from agent import SimpleAgent
+from agent import Agent
 
 class BTInterface:
-    def __init__(self, port: str):
+    def __init__(self, port: str, hm10_name: str, queryFunc):
         self.port = port
         self.rfids = queue.Queue()
-    EXPECTED_NAME = 'HM10_TM8'
+        self.agent = Agent(queryFunc, self.putRFID)
+        self.bridge = None
+        self.expected_name = hm10_name
 
     @staticmethod
     def background_listener(bridge, agent):
-        input("type anything with enter to activate")
-        print("activation")
-        agent.repeat = agent.activation_msg()
-        bridge.send(agent.repeat)
+        while not agent.auto_listen:
+            None
+        print('Background: start')
         while True:
             msg = bridge.listen()
             if msg:
@@ -34,23 +35,23 @@ class BTInterface:
             time.sleep(0.1)
 
     def connect(self):
-        bridge = HM10ESP32Bridge(port=self.port)
+        self.bridge = HM10ESP32Bridge(port=self.port)
         connected = False
 
-        print(f"Searching for {self.EXPECTED_NAME}")
+        print(f"Searching for {self.expected_name}")
 
         while not connected:
             try:
-                status = bridge.get_status()
-                name = bridge.get_hm10_name()
+                status = self.bridge.get_status()
+                name = self.bridge.get_hm10_name()
 
                 if status == 'DISCONNECTED' and name == None:
                     print('Target is disconnected with no name, try updating name...')
-                    if bridge.set_hm10_name(self.EXPECTED_NAME):
+                    if self.bridge.set_hm10_name(self.expected_name):
                         print("✅ Name updated successfully. Resetting ESP32...")
-                        bridge.reset()
+                        self.bridge.reset()
                         # Re-init after reset
-                        bridge = HM10ESP32Bridge(port=self.port)
+                        self.bridge = HM10ESP32Bridge(port=self.port)
                         continue
                     else:
                         print("❌ Failed to set name. Retry searching...")
@@ -61,29 +62,35 @@ class BTInterface:
                     time.sleep(2)
                     continue
 
-                current_name = bridge.get_hm10_name()
+                current_name = self.bridge.get_hm10_name()
 
-                if current_name == self.EXPECTED_NAME:
-                    print(f"✅ Correct device found: {self.EXPECTED_NAME}")
+                if current_name == self.expected_name:
+                    print(f"✅ Correct device found: {self.expected_name}")
                     connected = True
                 else:
-                    print(f"Target mismatch. Current: {current_name}, Expected: {self.EXPECTED_NAME}. Still looking...")
+                    print(f"Target mismatch. Current: {current_name}, Expected: {self.expected_name}. Still looking...")
                     time.sleep(2)
 
             except Exception as e:
                 print(f"Connection error: {e}. Retrying...")
                 time.sleep(2)
 
-        agent = SimpleAgent(self.pushRFID)
-        threading.Thread(target=self.background_listener, args=(bridge, agent), daemon=False).start()
+        threading.Thread(target=self.background_listener, args=(self.bridge, self.agent), daemon=False).start()
 
         print("\nChat closed.")
         return True
 
-    def pushRFID(self, rfid):
+    def isReady(self):
+        return self.agent.isReady
+
+    def activate(self):
+        if self.isReady():
+            self.bridge.send(self.agent.get_activation_msg())
+
+    def putRFID(self, rfid):
         self.rfids.put(rfid)
 
-    def popRFID(self):
+    def getRFID(self):
         if self.rfids.empty():
             return None
         else:
