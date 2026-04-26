@@ -1,4 +1,3 @@
-
 /*
 //define IR Pin
 #define analogPinIR0 A3
