@@ -47,7 +47,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str):
         bt_interface.connect()
         while not bt_interface.isReady():
             print("Waiting for ready signal...")
-            time.sleep(0.2)
+            time.sleep(0.5)
             msg = bt_interface.bridge.listen()
             if len(msg) > 0:
                 bt_interface.agent.on_message(msg)

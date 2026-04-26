@@ -3,7 +3,7 @@ from collections import deque
 
 # ── SETTINGS ──────────────────────────────────────────────────────────────
 # ↓ Change these to match your setup
-FILE_PATH   = r"./medium_maze.csv"
+FILE_PATH   = r"./data/medium_maze.csv"
 START_NODE  = 1    # FIX 1: removed trailing space — map IDs are always stripped
 # INIT_FACING = "N"   # initial facing: 'N', 'S', 'E', or 'W'
 
