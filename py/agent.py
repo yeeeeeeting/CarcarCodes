@@ -5,9 +5,10 @@ class Agent:
     def __init__(self, queryFunc, uploadFunc):
         self.state = 0
         self.counter = 0
-        self.actions = ['L1', 'R0', 'E0']
+        # self.actions = ['L1', 'R0', 'E0']
         self.repeat = ''
         self.last_msg_time = time.time()
+        self.last_query = ''
         self.isReady = False
         self.isActivated = False
         self.queryFunc = queryFunc
@@ -37,11 +38,22 @@ class Agent:
             return None
 
     def on_message(self, msg: str):
+        if msg == self.last_query and (time.time() - self.last_msg_time <= 0.8):
+            self.update_msg_time()
+            return None
+
         msg = msg.strip()
+        if len(msg) <= 0:
+            return None
+        
+        self.last_query = msg
+        self.update_msg_time()
 
         if msg[0] == 'v':
-            if self.repeat == self.__activation_msg():
+            if (not self.isActivated) and self.repeat == self.__activation_msg():
                 self.isActivated = True
+                time.sleep(0.01)
+                return self.queryFunc() + self.CMD_END
             self.update_msg_time()
             print("Success")
             return None
@@ -74,10 +86,10 @@ class Agent:
         if msg[0] == 'r':
             # self.update_msg_time()
             # vacuous query
-            self.queryFunc()
+            # self.queryFunc()
             code = msg[1:9]
             if self.upload(code):
-                return 'v' + self.CMD_END
+                return None # 'v' + self.CMD_END
             else:
                 self.repeat = 'x' + self.CMD_END
                 return self.repeat
