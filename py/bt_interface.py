@@ -22,10 +22,15 @@ class BTInterface:
             msg = bridge.listen()
             if msg:
                 print(f"\r[HM10]: {msg}")
-                reply = agent.on_message(msg)
-                if reply:
+                msgs = msg.split('ED')
+                replies = []
+                for m in msgs:
+                    r = agent.on_message(m)
+                    if r != None:
+                        replies.append(r)
+                for reply in replies:
                     bridge.send(reply)
-                print("reply = ", reply)
+                print("replies = ", replies)
             else:
                 # print("no msg")
                 reply = agent.check_no_response()

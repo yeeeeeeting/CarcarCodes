@@ -3,12 +3,12 @@ import logging
 import os
 import sys
 import time
+import BFS
 
 import numpy as np
 import pandas
 from bt_interface import BTInterface
 # from maze import Action, Maze
-from maze_interface import StrategyFiles, MazeInterface
 from score import ScoreboardServer, ScoreboardFake
 
 logging.basicConfig(
@@ -24,10 +24,6 @@ SERVER_URL = "http://carcar.ntuee.org/scoreboard"
 BT_PORT = "COM5"
 HM10_NAME = "HM10_TM8"
 
-SPECS_PATH = './analyzer/inputs/specs.json'
-PARAMS_PATH = './analyzer/inputs/params.json'
-MAZE_PATH = './analyzer/inputs/big_maze_114.csv'
-STRATEGY_PATH = './analyzer/intermediates/strategy.bin'
 TIME_CONSTRAINT = 65.0
 
 def parse_args():
@@ -42,14 +38,11 @@ def parse_args():
     return parser.parse_args()
 
 
-def main(mode: int, bt_port: str, team_name: str, server_url: str, strategy_files: str):
+def main(mode: int, bt_port: str, team_name: str, server_url: str):
     # maze = Maze(maze_file)
-    maze_interface = MazeInterface(strategy)
-    while not maze_interface.checkReady():
-        None
 
     ### Bluetooth connection haven't been implemented yet, we will update ASAP ###
-    bt_interface = BTInterface(port=bt_port, hm10_name=HM10_NAME, queryFunc=maze_interface.queryForResponse)
+    bt_interface = BTInterface(port=bt_port, hm10_name=HM10_NAME, queryFunc=BFS.getActions())
     if mode == "0":
         bt_interface.connect()
         while not bt_interface.isReady():
@@ -68,7 +61,6 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, strategy_file
         point = ScoreboardFake(team_name, "data/fakeUID.csv") # for local testing
 
     print("Start Game")
-    maze_interface.activate(time.time() + TIME_CONSTRAINT)
     if mode == "0":
         bt_interface.activate()
 
@@ -110,5 +102,4 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, strategy_file
 
 if __name__ == "__main__":
     args = parse_args()
-    strategy = StrategyFiles(SPECS_PATH, PARAMS_PATH, MAZE_PATH, STRATEGY_PATH)
-    main(**vars(args), strategy_files=strategy)
+    main(**vars(args))
