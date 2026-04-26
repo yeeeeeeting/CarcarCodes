@@ -3,7 +3,15 @@
 
 #define CUSTOM_NAME "HM10_TM8" // Max length is 12 characters [1]
 
-// #define __BLE_SERIAL_DEBUG__
+// #define __BLE_DEBUG_SERIAL__
+
+#ifdef __BLE_DEBUG_SERIAL__
+  #define BLE_DEBUG_PRINT(x) DEBUG_PRINT(x)
+  #define BLE_DEBUG_PRINTLN(x) DEBUG_PRINTLN(x)
+#else
+  #define BLE_DEBUG_PRINT(x)
+  #define BLE_DEBUG_PRINTLN(x)
+#endif
 
 class Communicator {
 private:
@@ -29,10 +37,12 @@ public:
   void sendMsg();
   bool loadResponse();
   void flushResponse();
-  void sendMsgUntilSuccess();
+  bool isResponseValid();
+  void sendMsgUntilSuccess(char);
   void clearInput();
   void clearResponse();
   void sendSuccessMsg();
+  void waitForResponse(int, char);
 };
 
 bool Communicator::moduleReady = false;
@@ -70,30 +80,27 @@ bool Communicator::waitForResponse(const char* expected, unsigned long timeout) 
   Serial3.setTimeout(timeout);
   String response = Serial3.readString();
 
-#ifdef __BLE_SERIAL_DEBUG__
+#ifdef __BLE_DEBUG_SERIAL__
   if (response.length() > 0) {
-    Serial.print("HM10 Response: ");
-    Serial.println(response);
+    BLE_DEBUG_PRINT("HM10 Response: ");
+    BLE_DEBUG_PRINTLN(response);
   }
-#endif // __BLE_SERIAL_DEBUG__
+#endif // __BLE_DEBUG_SERIAL__
 
   return (response.indexOf(expected) != -1);
 }
 
 void Communicator::bleSetup() {
-  Serial.begin(115200); // Debug Monitor (USB)
-#ifdef __BLE_SERIAL_DEBUG__
+#ifdef __BLE_DEBUG_SERIAL__
   while (!Serial);
-  Serial.println("Initializing HM-10...");
-#endif // __BLE_SERIAL_DEBUG__
+  BLE_DEBUG_PRINTLN("Initializing HM-10...");
+#endif // __BLE_DEBUG_SERIAL__
 
   // 1. Automatic Baud Rate Detection
   for (int i = 0; i < 9; i++) {
 
-#ifdef __BLE_SERIAL_DEBUG__
-    Serial.print("Testing baud rate: ");
-    Serial.println(Communicator::baudRates[i]);
-#endif // __BLE_SERIAL_DEBUG__
+    BLE_DEBUG_PRINT("Testing baud rate: ");
+    BLE_DEBUG_PRINTLN(Communicator::baudRates[i]);
     
     Serial3.begin(Communicator::baudRates[i]);
     Serial3.setTimeout(100);
@@ -105,9 +112,7 @@ void Communicator::bleSetup() {
     
     if (waitForResponse("OK", 800)) {
 
-#ifdef __BLE_SERIAL_DEBUG__
-      Serial.println("HM-10 detected and ready.");
-#endif // __BLE_SERIAL_DEBUG__
+      BLE_DEBUG_PRINTLN("HM-10 detected and ready.");
 
       moduleReady = true;
       break; 
@@ -118,55 +123,41 @@ void Communicator::bleSetup() {
   }
 
   if (!moduleReady) {
-#ifdef __BLE_SERIAL_DEBUG__
-    Serial.println("Failed to detect HM-10. Check 3.3V VCC and wiring.");
-#endif // __BLE_SERIAL_DEBUG__
+    BLE_DEBUG_PRINTLN("Failed to detect HM-10. Check 3.3V VCC and wiring.");
     return;
   }
 
   // 3. Restore Factory Defaults
-#ifdef __BLE_SERIAL_DEBUG__
-  Serial.println("Restoring factory defaults...");
-#endif // __BLE_SERIAL_DEBUG__
+  BLE_DEBUG_PRINTLN("Restoring factory defaults...");
   sendATCommand("AT+RENEW"); // Restores all setup values
   delay(1000);
 
   // 4. Set Custom Name via Macro
-#ifdef __BLE_SERIAL_DEBUG__
-  Serial.print("Setting name to: ");
-  Serial.println(CUSTOM_NAME);
-#endif // __BLE_SERIAL_DEBUG__
+  BLE_DEBUG_PRINT("Setting name to: ");
+  BLE_DEBUG_PRINTLN(CUSTOM_NAME);
   String nameCmd = "AT+NAME" + String(CUSTOM_NAME);
   sendATCommand(nameCmd.c_str()); // Max length is 12
   delay(500);
   sendATCommand("AT+RESET"); // Restart the module
   
   // 5. Enable Connection Notifications
-#ifdef __BLE_SERIAL_DEBUG__
-  Serial.println("Enabling notifications...");
-#endif // __BLE_SERIAL_DEBUG__
+  BLE_DEBUG_PRINTLN("Enabling notifications...");
   sendATCommand("AT+NOTI1"); // Notify when link is established/lost
 
   // 6. Get the Bluetooth MAC Address
-#ifdef __BLE_SERIAL_DEBUG__
-  Serial.println("Querying Bluetooth Address");
-#endif // __BLE_SERIAL_DEBUG__
+  BLE_DEBUG_PRINTLN("Querying Bluetooth Address");
   sendATCommand("AT+ADDR?");
 
   // 7. Restart the module to apply changes
-#ifdef __BLE_SERIAL_DEBUG__
-  Serial.println("Restarting module...");
-#endif // __BLE_SERIAL_DEBUG__
+  BLE_DEBUG_PRINTLN("Restarting module...");
   sendATCommand("AT+RESET"); // Restart the module
-  Serial.println("AT RESET");
+  BLE_DEBUG_PRINTLN("AT RESET");
   delay(2000);
   Serial3.begin(9600); // Now the module would use baudrate 9600
 
   flushResponse();
 
-#ifdef __BLE_SERIAL_DEBUG__
-  Serial.println("Initialization Complete.");
-#endif // __BLE_SERIAL_DEBUG__
+  BLE_DEBUG_PRINTLN("Initialization Complete.");
 }
 
 void Communicator::clearInput() {
@@ -178,6 +169,8 @@ void Communicator::clearResponse() {
 }
 
 void Communicator::sendMsg() {
+  BLE_DEBUG_PRINT("Send: ");
+  BLE_DEBUG_PRINTLN(input_msg);
   Serial3.write((const uint8_t*)(input_msg.c_str()), input_msg.length());
 }
 
@@ -186,9 +179,9 @@ bool Communicator::loadResponse() {
     while(Serial3.available()) {
       char c = Serial3.read();
       response_msg += c;
-      if(response_msg.endsWith(cmdSuffix)) {
-        Serial.print("recieved: ");
-        Serial.println(response_msg);
+      if(isResponseValid()) {
+        BLE_DEBUG_PRINT("recieved: ");
+        BLE_DEBUG_PRINTLN(response_msg);
         return true;
       }
     }
@@ -200,23 +193,48 @@ void Communicator::flushResponse() {
   while(Serial3.available()) {
     char c = Serial3.read();
   }
-  Serial.println("Flush Responses");
+  BLE_DEBUG_PRINTLN("Flush Responses");
 }
 
-void Communicator::sendMsgUntilSuccess() {
+bool Communicator::isResponseValid() {
+  return response_msg.length() > 0 && response_msg.endsWith(cmdSuffix);
+}
+
+void Communicator::sendMsgUntilSuccess(char expect = '\0') {
+  if(input_msg.length() <= 0)
+    return;
   clearResponse();
-  sendMsg();
-  delay(10);
   // test if response is ok
   while(true) {
-    // loading response
-    while(!loadResponse());
-    // response is fine
-    if(response_msg[0] != cmdFailPrefix)
-      break;
-    delay(20);
-    // abnormal response -> re-send msg
     sendMsg();
+    delay(100);
+    // loading
+    bool success = false;
+    while(true) {
+      if(!loadResponse()) {
+        delay(100);
+        break;
+      }
+      // Serial.println("loaded");
+      if(!isResponseValid()) {
+        delay(10);
+        continue;
+      }
+      // Serial.println("Valid");
+      if(expect == '\0' || response_msg[0] == expect) {
+        BLE_DEBUG_PRINTLN("Expected");
+        success = true;
+        break;
+      }
+      else {
+        BLE_DEBUG_PRINTLN("Msg but unexpected");
+      }
+    }
+    
+    if(success)
+      break;
+    clearResponse();
+    // abnormal response -> re-send msg
   }
 }
 
@@ -225,6 +243,20 @@ void Communicator::sendSuccessMsg() {
   input_msg += cmdSuccessPrefix;
   input_msg += cmdSuffix;
   sendMsg();
+}
+
+void Communicator::waitForResponse(int timeout, char expect = '\0') {
+  int start = millis();
+  while(millis() <= start + timeout) {
+    if(!loadResponse())
+      continue;
+    if(expect == '\0' || response_msg[0] == expect) {
+      break;
+    }
+    else {
+      clearResponse();
+    }
+  }
 }
 
 Communicator& hm10 = Communicator::getObj();

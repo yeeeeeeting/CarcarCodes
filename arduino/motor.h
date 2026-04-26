@@ -9,6 +9,9 @@
 #define BIN2 9
 #define BIN1 8
 
+#define LEFT_MOTOR_RATE 0.94
+#define RIGHT_MOTOR_RATE 1.0
+
 void motorSetup() {
   pinMode(PWMA, OUTPUT);
   pinMode(PWMB, OUTPUT);
@@ -22,16 +25,16 @@ void motorSetup() {
  * Helper to control motor
  */
 void motorLeftWrite(int value) {
-  const double rate = 1.0;
+  const double rate = LEFT_MOTOR_RATE;
   if(value >= 0) {
-    value = max(value, 255);
+    value = min(value, 255);
     value = value * rate;
     digitalWrite(AIN1, HIGH);
     digitalWrite(AIN2, LOW);
     analogWrite(PWMA, value);
   }
   else {
-    value = max(-value, 255);
+    value = min(-value, 255);
     value = value * rate;
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, HIGH);
@@ -43,16 +46,16 @@ void motorLeftWrite(int value) {
  * Helper to control motor
  */
 void motorRightWrite(int value) {
-  const double rate = 0.91;
+  const double rate = RIGHT_MOTOR_RATE;
   if(value >= 0) {
-    value = max(value, 255);
+    value = min(value, 255);
     value = value * rate;
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, HIGH);
     analogWrite(PWMB, value);
   }
   else {
-    value = max(-value, 255);
+    value = min(-value, 255);
     value = value * rate;
     digitalWrite(BIN1, HIGH);
     digitalWrite(BIN2, LOW);
@@ -60,9 +63,18 @@ void motorRightWrite(int value) {
   }
 }
 
+inline int sign(int x) {
+  return x < 0 ? -1 : (x > 0 ? 1 : 0);
+}
+
 void motorWriting(int vLeft, int vRight) {
-  motorLeftWrite(vLeft);
+  // static int lastRight = 0;
   motorRightWrite(vRight);
+  // if(lastRight * vRight <= 0) {
+  //   delay(80);
+  // }
+  motorLeftWrite(vLeft);
+  // lastRight = sign(vRight);
 }
 
 #endif // __INCLUDE_MOTOR_H_

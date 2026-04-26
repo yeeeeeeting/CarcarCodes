@@ -4,19 +4,19 @@
 #include "ble.h"
 
 //define IR Pin
-#define analogPinIR0 A4
-#define analogPinIR1 A3
+#define analogPinIR0 A3
+#define analogPinIR1 A4
 #define analogPinIR2 A5
 #define analogPinIR3 A6
 #define analogPinIR4 A7
 
 float IRstarts[5];
 
-#define IRthreshold0 120
-#define IRthreshold1 120
-#define IRthreshold2 120
-#define IRthreshold3 120
-#define IRthreshold4 120
+#define IRthreshold0 110
+#define IRthreshold1 110
+#define IRthreshold2 90
+#define IRthreshold3 110
+#define IRthreshold4 110
 
 #define IRDigital0 (analogRead(analogPinIR0) >= IRthreshold0 ? HIGH : LOW)
 #define IRDigital1 (analogRead(analogPinIR1) >= IRthreshold1 ? HIGH : LOW)
@@ -27,62 +27,100 @@ float IRstarts[5];
 
 
 // --- 循跡參數調整 ---
-const int Vh = 250;
-const int Vl = 170;
-const int Tp = 200;           // 基礎速度 (建議不要太快，比較好校正)
-const float Kp = 60.0;       // 校正強度 (若擺動太劇烈就調小)
-const float Ki = 14.4;
-const float Kd = 22.0;
-const float alpha = 0.97;
+const int Vhigh = 255;
+const int Vlow = 200;
+const int Tp = 240;           // 基礎速度
+const float Kp = 25.4;        // 比例控制係數
+const float Ki = 0.0004;      // 積分控制係數
+const float Kd = 736.0;       // 微分控制係數
+const float alpha = 0.98;     // 積分遺忘因子
+const float beta = 0.4;       // 微分遺留因子
+
+const int VRotateCorrection1 = 120;
+const int VRotateCorrection2 = 55;
 
 
 bool activated = false;
+bool ended = false;
+bool atNodeStraight = false;
 bool readyForID = false;
 
 void deactivate() {
   activated = false;
+  ended = true;
   motorWriting(0, 0);
 }
 
 void checkActivated() {
-  if( !hm10.loadResponse() )
-    return;
-  if(hm10.response_msg[0] == 'a') {
-    delay(10);
-    activated = true;
-    hm10.clearInput();
-    hm10.sendSuccessMsg();
+  #ifndef __DISABLE_BT__
+  hm10.clearInput();
+  hm10.input_msg += 'k';
+  hm10.input_msg += hm10.cmdSuffix;
+  hm10.sendMsgUntilSuccess('a');
+  // DEBUG_PRINTLN("Escaped");
+  bool successed = false;
+  {
+    // DEBUG_PRINT("Response: ");
+    // DEBUG_PRINTLN(hm10.response_msg);
+    if(hm10.response_msg[0] == 'a') {
+      DEBUG_PRINT("Activation!");
+      delay(10);
+      activated = true;
+      atNodeStraight = true;
+      successed = true;
+      hm10.clearInput();
+      hm10.sendSuccessMsg();
+    }
+    else {
+      hm10.clearResponse();
+    }
   }
-  else {
-    hm10.clearResponse();
-  }
+  #else
+  activated = true;
+  atNodeStraight = true;
+  #endif // __DISABLE_BT__
 }
 
 
 enum Turn {
+  INVALID,
   FORWARD,
   LEFT,
   RIGHT,
-  BACKWARD
+  BACKWARD,
+  END
 };
 
 struct Command {
-  bool valid;
-  bool end;
   Turn turn;
 };
 
 Command queryTurn() {
-  hm10.clearInput();
-  // construct query
-  hm10.input_msg += 'q';
-  hm10.input_msg += Communicator::cmdSuffix;
-  hm10.sendMsg();
-  hm10.sendMsgUntilSuccess();
+  #ifndef __DISABLE_BT__
+  DEBUG_PRINTLN("querying");
+  String cmdStr;
+  hm10.waitForResponse(200, 't');
+  if(hm10.isResponseValid() && hm10.response_msg[0] == 't') {
+    cmdStr = hm10.response_msg;
+    hm10.clearResponse();
+    hm10.clearInput();
+    hm10.input_msg += 'q';
+    hm10.input_msg += Communicator::cmdSuffix;
+    hm10.sendMsg();
+  }
+  else {
+    hm10.clearResponse();
+    hm10.clearInput();
+    // construct query
+    hm10.input_msg += 'q';
+    hm10.input_msg += Communicator::cmdSuffix;
+    hm10.sendMsgUntilSuccess('t');
+    cmdStr = hm10.response_msg;
+  }
 
   // parse command
-  Command result{true, false, FORWARD};
-  char c = hm10.response_msg[0];
+  Command result{INVALID};
+  char c = cmdStr[1];
   switch(c) {
   case 'F':
     result.turn = FORWARD;
@@ -97,15 +135,34 @@ Command queryTurn() {
     result.turn = BACKWARD;
     break;
   case 'E':
-    result.end = true;
+    result.turn = END;
     break;
   default:
-    result.valid = false;
+    result.turn = INVALID;
     break;
   }
 
-  readyForID = (hm10.response_msg[1] == '1');
-
+  readyForID = (cmdStr[2] == '1');
+  #else
+  constexpr Command cmdList[] = {
+    {LEFT},
+    {BACKWARD},
+    {FORWARD},
+    {BACKWARD},
+    {LEFT},
+    {BACKWARD},
+    {RIGHT},
+    {BACKWARD},
+    {FORWARD},
+    {BACKWARD},
+    {RIGHT},
+    {BACKWARD}
+  };
+  constexpr int N = sizeof(cmdList) / sizeof(cmdList[0]);
+  static int index = 0;
+  Command result = cmdList[index];
+  index = (index + 1) % N;
+  #endif
   return result;
 }
 
@@ -113,75 +170,53 @@ Command queryTurn() {
 void executeHardTurn(Turn turn) {
   if (turn == FORWARD) { // 直行：直接衝過黑區
     motorWriting(Tp, Tp);
-    delay(500); 
+    delay(200);
+    atNodeStraight = true;
     return;
   }
 
   // 1. 執行轉向 (原地旋轉)
   if (turn == LEFT) { // 左轉
-    motorWriting(Vh, Vh);
-    delay(280);
 
-    motorWriting(Vl, Vh);
-    delay(110);
+    motorWriting(100, 255);
+    delay(560);
 
-    motorWriting(0, 0);
-    delay(6);
+    motorWriting(-VRotateCorrection1, VRotateCorrection1); 
+    while(!(IRDigital0 || IRDigital1));
 
-    motorWriting(-250, 250); // 提高電壓確保轉得動
-    delay(150);              // 轉向時間，需實測微調
-
-    motorWriting(-145, 210);
-    delay(100);
-  
-    motorWriting(0, 0);
-    delay(6);
-  
-    motorWriting(-12, 12);
+    motorWriting(-VRotateCorrection2, VRotateCorrection2);
+    while(!(IRDigital2 || IRDigital3));
+    // delay(20);
   } 
   else if (turn == RIGHT) { // 右轉
-    motorWriting(Vh, Vh);
-    delay(280);
-
-    motorWriting(Vh, Vl);
-    delay(110);
-
-    motorWriting(0, 0);
-    delay(6);
-
-    motorWriting(250, -250); // 提高電壓確保轉得動
-    delay(150);              // 轉向時間，需實測微調
-
-    motorWriting(210, -145);
-    delay(100);
+    motorWriting(255, 100);
+    delay(560);
   
-    motorWriting(0, 0);
-    delay(6);
-  
-    motorWriting(12, -12);
+    motorWriting(VRotateCorrection1, -VRotateCorrection1); 
+    while(!(IRDigital4 || IRDigital3));
+
+    motorWriting(VRotateCorrection2, -VRotateCorrection2);
+    while(!(IRDigital2 || IRDigital1));
   } 
   else if (turn == BACKWARD) { // 迴轉
-    motorWriting(250, -250);
-    delay(270);
-    // motorWriting(0, 0);
-    // delay(1000);
   
-    motorWriting(220, -10);
-    delay(130);
+    motorWriting(230, -255);
+    delay(420);
+
+    motorWriting(170, -240);
+    delay(60);
     
-    // motorWriting(0, 0);
-    // delay(1000);
-    motorWriting(12, -9); 
+    motorWriting(VRotateCorrection1, -VRotateCorrection1); 
+    while(!(IRDigital4 || IRDigital3));
+  
+    motorWriting(VRotateCorrection2, -VRotateCorrection2); 
+    while(!(IRDigital2 || IRDigital1));
+    // delay(20);
   }
 
-  // 2. 轉完後尋找黑線，直到中央感測器碰到線才停止
-  // 這樣可以修正「轉過頭」或「轉不夠」的問題
-  while (analogRead(analogPinIR2) < IRthreshold2) {
-    // 持續旋轉直到對準
-  }
-  motorWriting(Vh, Vh);
-  delay(120);
-  motorWriting(0, 0); 
+  motorWriting(Tp, Vhigh);
+  delay(50);
+  // motorWriting(0, 0); 
   // delay(200); 
 }
 
@@ -194,6 +229,7 @@ void tracingSetup() {
   pinMode(analogPinIR4,INPUT);
 
   activated = false;
+  ended = false;
   readyForID = false;
 }
 
@@ -207,30 +243,39 @@ float centerOfMass(const int *weight, const int *pos, int len) {
 }
 
 void tracingLoop() {
+  // DEBUG_PRINT("at: ");
+  // DEBUG_PRINTLN(atNodeStraight);
   static int dgt[5]{0, 0, 0, 0, 0};
   static const int IR_poses[5]{-2, -1, 0, 1, 2};
   static double prev_error = 0;
+  static double diff_error = 0;
   static double cumulative_error = 0;
+  static unsigned long long prev_time = millis();
 
   byte* rfid = RFIDRead();
-  /*
+/*
   if(rfid != nullptr) {
     printRFID(rfid);
     printRFID(lastRFID);
-    Serial.println(RFIDEqual(rfid, lastRFID));
+    DEBUG_PRINTLN(RFIDEqual(rfid, lastRFID));
   }
-  */
+*/
   if(rfid != nullptr && !RFIDEqual(rfid, lastRFID)) {
-    Serial.println("DETECTED and back");
+    DEBUG_PRINTLN("DETECTED and back");
     readyForID = false;
     cpyRFID(lastRFID, rfid);
     motorWriting(0, 0);
-    sendRFIDUntilSuccess(rfid);
-    //motorWriting(-Vh, -Vh);
+    sendRFID(rfid); // sendRFIDUntilSuccess(rfid);
+    //motorWriting(-Vhigh, -Vhigh);
     //delay(50);
     motorWriting(0, 0);
     delay(10);
     executeHardTurn(BACKWARD);
+    prev_error = 0;
+    diff_error = 0;
+    cumulative_error = 0;
+    prev_time = millis();
+    return;
   }
 
   dgt[0] = IRDigital0;
@@ -240,57 +285,84 @@ void tracingLoop() {
   dgt[4] = IRDigital4;
 
   // A. 判定進入 Node 塊 (當中間三顆感測器都偵測到大面積黑色時)
-  if (dgt[1] && dgt[2] && dgt[3]) {
+  if (dgt[1] && dgt[2] && dgt[3] && !atNodeStraight) {
     motorWriting(0, 0); // 立即停車
-    Serial.println("NODE DETECTED! Waiting 0.02s...");
+    DEBUG_PRINTLN("NODE DETECTED! Waiting 0.02s...");
     delay(20); // 暫時延遲 0.02 秒
 
-    Command currentCmd{false};
-    while(!currentCmd.valid)
+    Command currentCmd{INVALID};
+    while(currentCmd.turn == INVALID)
       currentCmd = queryTurn();
 
-    if (!currentCmd.end) {
+    if (currentCmd.turn != END) {
       executeHardTurn(currentCmd.turn);
     } else {
-      Serial.println("No more commands. Stopping.");
+      DEBUG_PRINTLN("No more commands. Stopping.");
       deactivate();
       while(1); 
     }
+    atNodeStraight = true;
 
-    prev_error = 0;
-    cumulative_error = 0;
+    if(currentCmd.turn != FORWARD) {
+      prev_error = 0;
+      diff_error = 0;
+      cumulative_error = 0;
+    }
+    prev_time = millis();
+    return;
   }
+
+  int highCnt = dgt[0] + dgt[1] + dgt[2] + dgt[3] + dgt[4];
+  bool isAllZero = (highCnt == 0);
+  double error = ((isAllZero || atNodeStraight || highCnt >= 3 || (!dgt[1] && dgt[2] && !dgt[3])) ? (prev_error * alpha) : centerOfMass(dgt, IR_poses, 5));
+
+  if(atNodeStraight && (highCnt <= 2)) {
+    atNodeStraight = false;
+    return;
+  }
+
 
   // B. 正常循跡模式 (P 控制)
   else {
-    bool isAllZero = !dgt[0] && !dgt[1] && !dgt[2] && !dgt[3] && !dgt[4];
     // 計算誤差 error
     // 權重：左邊為負，右邊為正
-    // Serial.print(dgt[0]), Serial.print(' '), Serial.print(dgt[1]), Serial.print(' '), Serial.print(dgt[2]), Serial.print(' '), Serial.print(dgt[3]), Serial.print(' '), Serial.println(dgt[4]);
-    double error = isAllZero ? prev_error : centerOfMass(dgt, IR_poses, 5);
-    cumulative_error = cumulative_error * alpha + error;
-    cumulative_error = constrain(cumulative_error, -12.0, 12.0);
-    double diff_error = error - prev_error;
-    // Serial.print(error), Serial.print(' '), Serial.print(diff_error), Serial.print(' '), Serial.println(cumulative_error);
+    // DEBUG_PRINT(dgt[0]), DEBUG_PRINT(' '), DEBUG_PRINT(dgt[1]), DEBUG_PRINT(' '), DEBUG_PRINT(dgt[2]), DEBUG_PRINT(' '), DEBUG_PRINT(dgt[3]), DEBUG_PRINT(' '), DEBUG_PRINTLN(dgt[4]);
+    
+    unsigned long long current_time = millis();
+    long long delta_time = current_time - prev_time;
+    cumulative_error = cumulative_error * alpha + error * delta_time;
+    cumulative_error = constrain(cumulative_error, -2000.0, 2000.0);
+    double delta_error = error - prev_error;
+    diff_error  = diff_error * beta + delta_error / delta_time;
+    // DEBUG_PRINT(error), DEBUG_PRINT(' '), DEBUG_PRINT(diff_error), DEBUG_PRINT(' '), DEBUG_PRINTLN(cumulative_error);
+
+    if(atNodeStraight) {
+      cumulative_error *= 0.3;
+      diff_error *= -0.8;
+    }
 
     // If straight
-    if(abs(error) < 0.5 && abs(diff_error) < 0.5) {
-      if(!readyForID)
-        motorWriting(Vh, Vh);
-      else
-        motorWriting(Vl, Vl);
+    if(abs(error) < 1 && abs(diff_error) < 0.05 && abs(cumulative_error) < 20.0) {
+      if(!readyForID) {
+        motorWriting(Vhigh, Vhigh);
+      }
+      else {
+        motorWriting(Vlow, Vlow);
+      }
     }
     
-    // 如果全白 (d2 也是 0)，保持上次方向或稍微慢速前進
+    // 如果全白 (d2 也是 0)，倒退
     else if (isAllZero) {
-      motorWriting(Tp - 20, Tp - 20); 
+      motorWriting(Vlow, Vlow); 
     }
     else {
+      const int V0 = (readyForID ? Vlow : Tp);
       int correction = (int)(Kp * error + Ki * cumulative_error + Kd * diff_error);
-      motorWriting(Tp + correction, Tp - correction);
+      motorWriting(V0 + correction, V0 - correction);
     }
 
     prev_error = error;
+    prev_time = current_time;
   }
 }
 
