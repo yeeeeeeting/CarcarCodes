@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="第1頁" id="ThdVjOVcRwHHX962nRCg">
-    <mxGraphModel dx="2060" dy="-45" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1288" dy="-466" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -50,7 +50,7 @@
             <mxPoint x="1200" y="80" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="_XKNNjgjOoaYK4hogBch-52" connectable="0" parent="_XKNNjgjOoaYK4hogBch-50" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;" value="Fail" vertex="1">
+        <mxCell id="_XKNNjgjOoaYK4hogBch-52" connectable="0" parent="_XKNNjgjOoaYK4hogBch-50" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;labelBackgroundColor=light-dark(#a6cfff, #ededed);" value="Fail" vertex="1">
           <mxGeometry relative="1" x="0.1438" y="-1" as="geometry">
             <mxPoint x="-14" y="-1" as="offset" />
           </mxGeometry>
@@ -58,7 +58,7 @@
         <mxCell id="_XKNNjgjOoaYK4hogBch-35" parent="_XKNNjgjOoaYK4hogBch-3" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;read RFID?&lt;/span&gt;" vertex="1">
           <mxGeometry height="100" width="140" x="970" y="30" as="geometry" />
         </mxCell>
-        <mxCell id="_XKNNjgjOoaYK4hogBch-40" parent="_XKNNjgjOoaYK4hogBch-3" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=default;align=center;verticalAlign=middle;rounded=0;fontSize=14;" value="(Send UID &amp;amp; record)" vertex="1">
+        <mxCell id="_XKNNjgjOoaYK4hogBch-40" parent="_XKNNjgjOoaYK4hogBch-3" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=light-dark(#a6cfff, #ededed);align=center;verticalAlign=middle;rounded=0;fontSize=14;gradientColor=none;" value="(Send UID &amp;amp; record)" vertex="1">
           <mxGeometry height="20" width="130" x="1110" y="10" as="geometry" />
         </mxCell>
         <mxCell id="_XKNNjgjOoaYK4hogBch-41" edge="1" parent="_XKNNjgjOoaYK4hogBch-3" source="_XKNNjgjOoaYK4hogBch-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="_XKNNjgjOoaYK4hogBch-40" value="">
@@ -70,7 +70,7 @@
             <mxPoint x="980" y="-80" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="_XKNNjgjOoaYK4hogBch-42" connectable="0" parent="_XKNNjgjOoaYK4hogBch-41" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;" value="Success" vertex="1">
+        <mxCell id="_XKNNjgjOoaYK4hogBch-42" connectable="0" parent="_XKNNjgjOoaYK4hogBch-41" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;labelBackgroundColor=light-dark(#a6cfff, #ededed);" value="Success" vertex="1">
           <mxGeometry relative="1" x="-0.8735" y="-2" as="geometry">
             <mxPoint x="28" y="-14" as="offset" />
           </mxGeometry>
@@ -112,7 +112,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="_XKNNjgjOoaYK4hogBch-26" connectable="0" parent="_XKNNjgjOoaYK4hogBch-25" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;" value="No" vertex="1">
+        <mxCell id="_XKNNjgjOoaYK4hogBch-26" connectable="0" parent="_XKNNjgjOoaYK4hogBch-25" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;labelBackgroundColor=light-dark(#a6cfff, #ededed);" value="No" vertex="1">
           <mxGeometry relative="1" x="-0.7204" y="-1" as="geometry">
             <mxPoint x="-1" y="36" as="offset" />
           </mxGeometry>
@@ -125,7 +125,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="_XKNNjgjOoaYK4hogBch-29" connectable="0" parent="_XKNNjgjOoaYK4hogBch-28" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;" value="Yes" vertex="1">
+        <mxCell id="_XKNNjgjOoaYK4hogBch-29" connectable="0" parent="_XKNNjgjOoaYK4hogBch-28" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;labelBackgroundColor=light-dark(#a6cfff, #ededed);" value="Yes" vertex="1">
           <mxGeometry relative="1" x="-0.8644" y="1" as="geometry">
             <mxPoint x="2" y="1" as="offset" />
           </mxGeometry>
