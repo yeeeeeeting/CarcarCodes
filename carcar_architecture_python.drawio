@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="第1頁" id="ZiR7w82bmqjItPiNs53i">
-    <mxGraphModel dx="2298" dy="803" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2700" dy="1022" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -8,10 +8,12 @@
           <mxGeometry height="200" width="200" x="440" y="80" as="geometry" />
         </mxCell>
         <mxCell id="SzfZAtT4LzHjnBfy1nLX-2" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;bt_interface.py&lt;/font&gt;" vertex="1">
-          <mxGeometry height="200" width="200" x="1041" y="410" as="geometry" />
+          <mxGeometry height="200" width="200" x="840" y="300" as="geometry" />
         </mxCell>
         <mxCell id="SzfZAtT4LzHjnBfy1nLX-3" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;bfs.py&lt;/font&gt;" vertex="1">
-          <mxGeometry height="1220" width="520" x="-120" y="360" as="geometry" />
+          <mxGeometry height="1220" width="520" x="-120" y="360" as="geometry">
+            <mxRectangle height="40" width="90" x="-120" y="360" as="alternateBounds" />
+          </mxGeometry>
         </mxCell>
         <mxCell id="SzfZAtT4LzHjnBfy1nLX-6" parent="SzfZAtT4LzHjnBfy1nLX-3" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;getActions&lt;/font&gt;" vertex="1">
           <mxGeometry height="1150" width="480" x="20" y="50" as="geometry" />
@@ -158,10 +160,66 @@
           <mxGeometry height="70" width="140" x="170" y="1060" as="geometry" />
         </mxCell>
         <mxCell id="SzfZAtT4LzHjnBfy1nLX-4" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;agent.py&lt;/font&gt;" vertex="1">
-          <mxGeometry height="200" width="200" x="1260" y="410" as="geometry" />
+          <mxGeometry height="305" width="330" x="1230" y="275" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-106" edge="1" parent="SzfZAtT4LzHjnBfy1nLX-4" source="SzfZAtT4LzHjnBfy1nLX-103" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="SzfZAtT4LzHjnBfy1nLX-133">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="319.50000000000045" y="145" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-107" edge="1" parent="SzfZAtT4LzHjnBfy1nLX-4" source="SzfZAtT4LzHjnBfy1nLX-103" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="SzfZAtT4LzHjnBfy1nLX-104">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-103" parent="SzfZAtT4LzHjnBfy1nLX-4" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Agent&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="100" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-104" parent="SzfZAtT4LzHjnBfy1nLX-4" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;__init__&lt;/span&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="21" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-135" edge="1" parent="SzfZAtT4LzHjnBfy1nLX-4" source="SzfZAtT4LzHjnBfy1nLX-133" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;endArrow=none;endFill=0;" target="SzfZAtT4LzHjnBfy1nLX-136" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="240" y="275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-133" parent="SzfZAtT4LzHjnBfy1nLX-4" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;on_message&lt;/span&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="180" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-136" parent="SzfZAtT4LzHjnBfy1nLX-4" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;" value="Determine the response to the HM-10 message" vertex="1">
+          <mxGeometry height="60" width="140" x="170" y="225" as="geometry" />
         </mxCell>
         <mxCell id="SzfZAtT4LzHjnBfy1nLX-5" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;score.py&lt;/font&gt;" vertex="1">
-          <mxGeometry height="200" width="200" x="1360" y="160" as="geometry" />
+          <mxGeometry height="230" width="460" x="1870" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-95" edge="1" parent="SzfZAtT4LzHjnBfy1nLX-5" source="SzfZAtT4LzHjnBfy1nLX-91" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="SzfZAtT4LzHjnBfy1nLX-92">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="230" y="130" />
+              <mxPoint x="80" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-96" edge="1" parent="SzfZAtT4LzHjnBfy1nLX-5" source="SzfZAtT4LzHjnBfy1nLX-91" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="SzfZAtT4LzHjnBfy1nLX-93">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-97" edge="1" parent="SzfZAtT4LzHjnBfy1nLX-5" source="SzfZAtT4LzHjnBfy1nLX-91" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="SzfZAtT4LzHjnBfy1nLX-94">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="230" y="130" />
+              <mxPoint x="370" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-91" parent="SzfZAtT4LzHjnBfy1nLX-5" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Scoreboard&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="170" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-92" parent="SzfZAtT4LzHjnBfy1nLX-5" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;__init__ &amp;amp; _start_game&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="20" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-93" parent="SzfZAtT4LzHjnBfy1nLX-5" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;add_UID&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="160" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="SzfZAtT4LzHjnBfy1nLX-94" parent="SzfZAtT4LzHjnBfy1nLX-5" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;get_current_score&lt;/span&gt;" vertex="1">
+          <mxGeometry height="60" width="140" x="300" y="150" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
