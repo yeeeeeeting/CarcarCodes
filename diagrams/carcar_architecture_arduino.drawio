@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="第1頁" id="ThdVjOVcRwHHX962nRCg">
-    <mxGraphModel dx="2060" dy="1124" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1585" dy="865" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -110,7 +110,7 @@
         <mxCell id="1tV8iosl8I2KKQYSS1XX-27" parent="1tV8iosl8I2KKQYSS1XX-43" style="rounded=0;whiteSpace=wrap;html=1;container=0;" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;sendMsgUntilSuccess&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="170" x="10" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="1tV8iosl8I2KKQYSS1XX-44" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Loading&lt;/font&gt;" vertex="1">
+        <mxCell id="1tV8iosl8I2KKQYSS1XX-44" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;dashed=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Loading&lt;/font&gt;" vertex="1">
           <mxGeometry height="270" width="160" x="740" y="590" as="geometry">
             <mxRectangle height="40" width="100" x="740" y="510" as="alternateBounds" />
           </mxGeometry>
