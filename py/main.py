@@ -18,7 +18,6 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 TEAM_NAME = "Please_Enter_Your_Name"
-HM10_NAME = "HM10_t8"
 SERVER_URL = "http://carcar.ntuee.org/scoreboard"
 # MAZE_FILE = "data/small_maze.csv"
 BT_PORT = "COM5"
